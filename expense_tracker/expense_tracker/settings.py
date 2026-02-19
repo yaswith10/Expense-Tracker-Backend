@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_spectacular',
     'expenses'
 ]
 
@@ -128,9 +129,16 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES' : [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    'DEFAULT_SCHEMA_CLASS' : 'drf_spectacular.openapi.AutoSchema'
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME' : timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME' : timedelta(days=1)
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE' : 'Expense Tracker API',
+    'DESCRIPTION' : 'API Documentation for Expense Tracker Project',
+    'VERSION' : '0.1.0'
 }
