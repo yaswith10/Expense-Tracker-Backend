@@ -1,7 +1,8 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.models import User
 from .models import Expense
-from .serializer import ExpenserSerializer
+from .serializer import ExpenserSerializer, RegisterSerializer
 
 # Create your views here.
 
@@ -14,3 +15,8 @@ class ExpenseListCreateView(generics.ListCreateAPIView):
     
     def perform_create(self, serializer):
         serializer.save(user = self.request.user)
+    
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+    permission_classes = []
