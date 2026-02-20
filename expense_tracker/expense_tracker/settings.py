@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'drf_spectacular',
+    'django_filters',
     'expenses'
 ]
 
@@ -129,12 +130,16 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES' : [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    'DEFAULT_FILTER_BACKENDS' : [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.OrderingFilter',
+    ],
     'DEFAULT_SCHEMA_CLASS' : 'drf_spectacular.openapi.AutoSchema'
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME' : timedelta(minutes=15),
-    'REFRESH_TOKEN_LIFETIME' : timedelta(days=1)
+    'ACCESS_TOKEN_LIFETIME' : timedelta(minutes=45),
+    'REFRESH_TOKEN_LIFETIME' : timedelta(days=7)
 }
 
 SPECTACULAR_SETTINGS = {
