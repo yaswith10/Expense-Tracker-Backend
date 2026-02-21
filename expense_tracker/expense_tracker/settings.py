@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',
     'django_filters',
+    'corsheaders',
     'expenses'
 ]
 
@@ -56,6 +57,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'expense_tracker.urls'
@@ -147,3 +150,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION' : 'API Documentation for Expense Tracker Project',
     'VERSION' : '0.1.0'
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",
+]
