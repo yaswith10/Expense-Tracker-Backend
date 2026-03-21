@@ -1,13 +1,24 @@
-from rest_framework import generics, filters
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
+import hashlib
+import json
+from decimal import Decimal
+
+from django.core.cache import cache
 from django.db.models import Sum
 from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.contrib.auth.models import User
+
+from .ai.exceptions import AIModuleError, LLMRateLimitError
+from .ai.interface import ExpenseData, get_expense_insights
 from .models import Expense
 from .serializer import ExpenseSerializer, RegisterSerializer
+
+_INSIGHTS_CACHE_TTL_SECONDS = 900  # 15 minutes
+_INSIGHTS_EXPENSE_LIMIT = 30
 
 
 class ExpenseListCreateView(generics.ListCreateAPIView):
@@ -79,3 +90,58 @@ class ExpenseCategoryBreakdownView(APIView):
             "year": current_date.year,
             "breakdown": list(breakdown),
         })
+
+
+class ExpenseInsightsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        expenses = (
+            Expense.objects
+            .filter(user=request.user)
+            .order_by("-created_at")
+            .values("title", "amount", "category", "date")
+            [:_INSIGHTS_EXPENSE_LIMIT]
+        )
+
+        if not expenses:
+            return Response({"insights": [], "source": "none", "cached": False})
+
+        cache_key = self._build_cache_key(request.user.id, list(expenses))
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response({**cached, "cached": True})
+
+        expense_data = [
+            ExpenseData(
+                title=e["title"],
+                amount=Decimal(str(e["amount"])),
+                category=e["category"],
+                date=e["date"],
+            )
+            for e in expenses
+        ]
+
+        try:
+            result = get_expense_insights(expense_data)
+        except LLMRateLimitError:
+            return Response(
+                {"error": "The AI service is temporarily rate-limited. Please try again shortly."},
+                status=429,
+            )
+        except AIModuleError as exc:
+            return Response(
+                {"error": "AI insights are temporarily unavailable.", "detail": str(exc)},
+                status=503,
+            )
+
+        payload = {"insights": result.insights, "source": result.source}
+        cache.set(cache_key, payload, timeout=_INSIGHTS_CACHE_TTL_SECONDS)
+
+        return Response({**payload, "cached": False})
+
+    @staticmethod
+    def _build_cache_key(user_id: int, expenses: list[dict]) -> str:
+        fingerprint = json.dumps(expenses, default=str, sort_keys=True)
+        digest = hashlib.sha256(fingerprint.encode()).hexdigest()
+        return f"expense_insights:{user_id}:{digest}"
