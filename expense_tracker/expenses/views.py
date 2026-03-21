@@ -7,51 +7,44 @@ from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.models import User
 from .models import Expense
-from .serializer import ExpenserSerializer, RegisterSerializer
+from .serializer import ExpenseSerializer, RegisterSerializer
 
-
-# Create your views here.
 
 class ExpenseListCreateView(generics.ListCreateAPIView):
-    serializer_class = ExpenserSerializer
+    serializer_class = ExpenseSerializer
     permission_classes = [IsAuthenticated]
-
-
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    lookup_fields = ['category','amount']
-    ordering_fields = ['amount', 'created_at']
+    filterset_fields = ["category", "amount"]
+    ordering_fields = ["amount", "created_at"]
 
     def get_queryset(self):
-        return Expense.objects.filter(user = self.request.user)
-    
+        return Expense.objects.filter(user=self.request.user)
+
     def perform_create(self, serializer):
-        serializer.save(user = self.request.user)
-    
+        serializer.save(user=self.request.user)
+
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = []
+
 
 class ExpenseSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         current_date = now()
-        month = current_date.month
-        year = current_date.year
-
         expenses = Expense.objects.filter(
-            user = request.user,
-            created_at__month = month,
-            created_at__year = year
+            user=request.user,
+            created_at__month=current_date.month,
+            created_at__year=current_date.year,
         )
-
-        total = expenses.aggregate(total_amount = Sum("amount"))["total_amount"] or 0
+        total = expenses.aggregate(total_amount=Sum("amount"))["total_amount"] or 0
         count = expenses.count()
-
         return Response({
-            "month" : month,
-            "year" : year,
-            "total_expense" : total,
-            "count" : count
+            "month": current_date.month,
+            "year": current_date.year,
+            "total_expense": total,
+            "count": count,
         })
