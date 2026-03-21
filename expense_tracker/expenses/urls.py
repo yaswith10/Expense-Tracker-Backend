@@ -1,8 +1,16 @@
 from django.urls import path
-from .views import ExpenseListCreateView, RegisterView, ExpenseSummaryView
+from .views import (
+    ExpenseListCreateView,
+    ExpenseDetailView,
+    ExpenseCategoryBreakdownView,
+    RegisterView,
+    ExpenseSummaryView,
+)
 
 urlpatterns = [
-    path('expenses/', ExpenseListCreateView.as_view(), name='expenses'),
-    path('expenses/summary/', ExpenseSummaryView.as_view(), name='expense-summary'),
-    path('register/', RegisterView.as_view(), name='register'),
+    path("expenses/", ExpenseListCreateView.as_view(), name="expenses"),
+    path("expenses/<int:pk>/", ExpenseDetailView.as_view(), name="expense-detail"),
+    path("expenses/summary/", ExpenseSummaryView.as_view(), name="expense-summary"),
+    path("expenses/category-breakdown/", ExpenseCategoryBreakdownView.as_view(), name="expense-category-breakdown"),
+    path("register/", RegisterView.as_view(), name="register"),
 ]
